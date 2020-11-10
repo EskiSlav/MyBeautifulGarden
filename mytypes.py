@@ -46,9 +46,15 @@ class Plant(BaseModel):
     #              temperature_regime: TemperatureRegime=None, watering_regime: WateringRegime=None,
     #              light_regime: LightRegime=None, flowering_period: FloweringPeriod=None):
 
+    def __str__(self):
+        return "{:15} {:15}\n".format(self.name, self.plant_type.plant_type)
+
     class Meta:
         table_name = 'Plants'
 
- 
+    
+    
+        
+
 class ListOfPlants(list):
     pass

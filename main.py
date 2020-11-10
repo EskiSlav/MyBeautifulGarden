@@ -1,3 +1,6 @@
+ # -*- coding: utf-8 -*-
+
+
 # Работа должна быть выполнена на python обязательно(и только) по принципам ооп - 
 # полиморфизм, инкапсуляция, наследование, вывести все это через gui, например 
 # tkinter, программа также должна работать с небольшой базой данный типа sql или postgres. 
@@ -22,6 +25,9 @@ import logging
 import tkinter as tk
 
 from mytypes import *
+import peewee
+
+from formatters import get_formatted_plant
 
 logger = logging.getLogger('peewee')
 logger.addHandler(logging.StreamHandler())
@@ -35,7 +41,7 @@ class Application(tk.Frame):
         self.HEIGHT = 500
         self.LEFT = 300
         self.RIGHT = 300
-        master.geometry(f"{self.WIDTH}x{self.HEIGHT}+{self.LEFT}+{self.RIGHT}")
+        master.geometry("{}x{}+{}+{}".format(self.WIDTH, self.HEIGHT, self.LEFT, self.RIGHT))
 
         super().__init__(master)
         self.master = master
@@ -45,52 +51,63 @@ class Application(tk.Frame):
     def create_widgets(self):
         self.select_btn = tk.Button(self.master, text='Select')
         self.select_btn['command'] = self.select_from_db
-        self.select_btn.place(x=int(self.WIDTH/4 - 50), y=int(3*self.HEIGHT/4), width=100)
+        self.select_btn.place(x=int(self.WIDTH/8 - 30), y=int(3*self.HEIGHT/4), width=100)
 
+        self.insert_btn = tk.Button(self.master, text='Insert')
+        self.insert_btn['command'] = self.add_plant
+        self.insert_btn.place(x=int(self.WIDTH/8 + 180), y=int(3*self.HEIGHT/4), width=100)
+        
         self.text_field = tk.Text(self.master, width=67, height=36, state=tk.DISABLED)
         self.text_field.place(x=self.WIDTH/2 + 10, y=10) 
 
-        offset = 0
-        self.name_label = tk.Label(self.master, text='Название растения')
-        self.name_field = tk.Text(self.master, width=25, height=1, state=tk.NORMAL)
-        self.name_field.place(x=150, y=int(self.HEIGHT/2) + offset)
-        self.name_label.place(x=10, y=int(self.HEIGHT/2) - 2 + offset)
+        offset = 25
+        y = int(self.HEIGHT/4) + offset
+        x = 50
+        x_field_offset = 200
+        subfield_offset = 50
+        self.plant_name_label = tk.Label(self.master, text='Название растения')
+        self.plant_name_field = tk.Text(self.master, width=25, height=1, state=tk.NORMAL)
+        self.plant_name_field.place(x=x + x_field_offset, y=y)
+        self.plant_name_label.place(x=x, y=y)
 
-        # offset = 15
-        # self.name_label = tk.Label(self.master, text='Тип растения')
-        # self.name_field = tk.Text(self.master, width=25, height=1, state=tk.NORMAL)
-        # self.name_field.place(x=150, y=int(self.HEIGHT/2) + offset)
-        # self.name_label.place(x=10, y=int(self.HEIGHT/2) - 2 + offset)
+        y += offset
+        self.plant_type_label = tk.Label(self.master, text='Тип растения')
+        self.plant_type_field = tk.Text(self.master, width=25, height=1, state=tk.NORMAL)
+        self.plant_type_field.place(x=x + x_field_offset, y=y)
+        self.plant_type_label.place(x=x, y=y)
 
-        # offset = 30
-        # self.name_label = tk.Label(self.master, text='Температурный режим')
-        # self.name_field = tk.Text(self.master, width=25, height=1, state=tk.NORMAL)
-        # self.name_field.place(x=150, y=int(self.HEIGHT/2) + offset)
-        # self.name_label.place(x=10, y=int(self.HEIGHT/2) - 2 + offset)
+        y += offset
+        self.temperature_regime_label = tk.Label(self.master, text='Температурный режим')
+        self.temperature_regime_field1 = tk.Text(self.master, width=6, height=1, state=tk.NORMAL)
+        self.temperature_regime_field2 = tk.Text(self.master, width=6, height=1, state=tk.NORMAL)
+        self.temperature_regime_field1.place(x=x + x_field_offset, y=y)
+        self.temperature_regime_field2.place(x=x + x_field_offset + subfield_offset, y=y)
+        self.temperature_regime_label.place(x=x, y=y)
 
-        # offset = 45
-        # self.name_label = tk.Label(self.master, text='Режим Полива')
-        # self.name_field = tk.Text(self.master, width=25, height=1, state=tk.NORMAL)
-        # self.name_field.place(x=150, y=int(self.HEIGHT/2) + offset)
-        # self.name_label.place(x=10, y=int(self.HEIGHT/2) - 2 + offset)
+        y += offset
+        self.watering_regime_label = tk.Label(self.master, text='Режим Полива')
+        self.watering_regime_field1 = tk.Text(self.master, width=6, height=1, state=tk.NORMAL)
+        self.watering_regime_field2 = tk.Text(self.master, width=6, height=1, state=tk.NORMAL)
+        self.watering_regime_field1.place(x=x + x_field_offset, y=y)
+        self.watering_regime_field2.place(x=x + x_field_offset + subfield_offset, y=y)
+        self.watering_regime_label.place(x=x, y=y)
 
-        # offset = 60
-        # self.name_label = tk.Label(self.master, text='Режим Освещения')
-        # self.name_field = tk.Text(self.master, width=25, height=1, state=tk.NORMAL)
-        # self.name_field.place(x=150, y=int(self.HEIGHT/2) + offset)
-        # self.name_label.place(x=10, y=int(self.HEIGHT/2) - 2 + offset)
+        y += offset
+        self.lightning_regime_label = tk.Label(self.master, text='Режим Освещения')
+        self.lightning_regime_field = tk.Text(self.master, width=25, height=1, state=tk.NORMAL)
+        self.lightning_regime_field.place(x=x + x_field_offset, y=y)
+        self.lightning_regime_label.place(x=x, y=y)
 
-        # offset = 75
-        # self.name_label = tk.Label(self.master, text='Период цветения')
-        # self.name_field = tk.Text(self.master, width=25, height=1, state=tk.NORMAL)
-        # self.name_field.place(x=150, y=int(self.HEIGHT/2) + offset)
-        # self.name_label.place(x=10, y=int(self.HEIGHT/2) - 2 + offset)
+        y += offset
+        self.flowering_regime_label = tk.Label(self.master, text='Период цветения')
+        self.flowering_regime_field = tk.Text(self.master, width=25, height=1, state=tk.NORMAL)
+        self.flowering_regime_field.place(x=x + x_field_offset, y=y)
+        self.flowering_regime_label.place(x=x, y=y)
 
 
 
     def select_from_db(self):
-        plant_name = self.name_field.get("1.0", tk.END)[:-1]
-        # plant_name = self.name_field.get() # ???
+        plant_name = self.plant_name_field.get("1.0", tk.END)[:-1]
 
         if len(plant_name) > 0:
             query = (Plant.select()
@@ -100,18 +117,50 @@ class Application(tk.Frame):
 
         else:
             query = Plant.select()
-
-        format_string = "{:15} {:15}\n"
-
+            plants = query.execute()
+            
         self.text_field.config(state=tk.NORMAL)
         self.text_field.delete('1.0', tk.END)
-        self.text_field.insert(tk.END, format_string.format('Plant Type', 'Name'))
-        for plant in query:
-            self.text_field.insert(tk.END, format_string.format(str(plant.plant_type.plant_type), plant.name))
+        self.text_field.insert(tk.END, "{:15} {:15}\n".format('Plant Type', 'Name'))
+        for plant in plants:
+            text = get_formatted_plant(plant)
+            self.text_field.insert(tk.END, text)
         self.text_field.config(state=tk.DISABLED)
     
+    def add_plant(self):
+        plant_name = self.plant_name_field.get("1.0", tk.END)[:-1]
+        plant_type = self.plant_type_field.get("1.0", tk.END)[:-1]
+        self.__add_plant(plant_name, plant_type)
+
     @staticmethod
-    def add_plant(plant_name: str, )
+    def __add_plant(plant_name: str, plant_type: str):
+        add = True
+        while add:
+            try:
+                Plant.create(
+                    name=plant_name, 
+                    plant_type=PlantType.get(PlantType.plant_type == plant_type)
+                    )
+                add = False
+            except peewee.DoesNotExist as e:
+                PlantType.create(plant_type=plant_type)
+    
+    @staticmethod
+    def _create_initial_rows():
+        Application._delete_all_rows_in_database()
+        Application.__add_plant('Клён', 'Дерево')
+        Application.__add_plant('Дуб', 'Дерево')
+        Application.__add_plant('Граб', 'Дерево')
+        Application.__add_plant('Черешня', 'Дерево')
+        Application.__add_plant('Малина', 'Куст')
+        Application.__add_plant('Клубника', 'Куст')
+
+    @staticmethod
+    def _delete_all_rows_in_database():
+        if input('Are you sure you want to delete all rows? (y/n): ').lower() == 'y':
+            Plant.delete().where(1 == 1).execute()
+            PlantType.delete().where(1 == 1).execute()
+
 
 
 if __name__ == '__main__':
