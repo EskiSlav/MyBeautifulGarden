@@ -28,6 +28,7 @@ from mytypes import *
 import peewee
 
 from formatters import *
+from event_handlers import *
 
 logger = logging.getLogger('peewee')
 logger.addHandler(logging.StreamHandler())
@@ -64,63 +65,101 @@ class Application(tk.Frame):
         y = int(self.HEIGHT/10) + offset
         x = 50
         x_field_offset = 200
-        subfield_offset = 50
+        subfield_offset = 70
+
         self.plant_name_label = tk.Label(self.master, text='Название растения')
-        self.plant_name_field = tk.Entry(self.master, width=25, state=tk.NORMAL)
+        self.plant_name_field = tk.Entry(self.master, width=25, fg='grey')
+        self.plant_name_field.bind('<FocusIn>', on_click)
+        self.plant_name_field.bind('<FocusOut>', on_focusout)
         self.plant_name_field.place(x=x + x_field_offset, y=y)
         self.plant_name_label.place(x=x, y=y)
+        self.plant_name_field.insert(0, 'Plant Name')
 
         y += offset
         self.plant_type_label = tk.Label(self.master, text='Тип растения')
-        self.plant_type_field = tk.Entry(self.master, width=25, state=tk.NORMAL)
+        self.plant_type_field = tk.Entry(self.master, width=25, fg='grey')
+        self.plant_type_field.bind('<FocusIn>', on_click)
+        self.plant_type_field.bind('<FocusOut>', on_focusout)
         self.plant_type_field.place(x=x + x_field_offset, y=y)
         self.plant_type_label.place(x=x, y=y)
+        self.plant_type_field.insert(0, 'Plant Type')
 
         y += offset
         self.temperature_regime_label = tk.Label(self.master, text='Температурный режим')
-        self.temperature_regime_min = tk.Entry(self.master, width=6, state=tk.NORMAL)
-        self.temperature_regime_max = tk.Entry(self.master, width=6, state=tk.NORMAL)
-        self.temperature_regime_opt = tk.Entry(self.master, width=6, state=tk.NORMAL)
+        self.temperature_regime_min = tk.Entry(self.master, width=6, state=tk.NORMAL, fg='grey')
+        self.temperature_regime_max = tk.Entry(self.master, width=6, state=tk.NORMAL, fg='grey')
+        self.temperature_regime_opt = tk.Entry(self.master, width=6, state=tk.NORMAL, fg='grey')
+        self.temperature_regime_min.bind('<FocusIn>', on_temperature_entry_click)
+        self.temperature_regime_max.bind('<FocusIn>', on_temperature_entry_click)
+        self.temperature_regime_opt.bind('<FocusIn>', on_temperature_entry_click)
+        self.temperature_regime_min.bind('<FocusOut>', on_temperature_entry_min_focusout)
+        self.temperature_regime_max.bind('<FocusOut>', on_temperature_entry_max_focusout)
+        self.temperature_regime_opt.bind('<FocusOut>', on_temperature_entry_opt_focusout)
         self.temperature_regime_min.place(x=x + x_field_offset, y=y)
         self.temperature_regime_max.place(x=x + x_field_offset + subfield_offset, y=y)
         self.temperature_regime_opt.place(x=x + x_field_offset + subfield_offset*2, y=y)
-        self.temperature_regime_min.insert(tk.END, 'Min')
-        self.temperature_regime_max.insert(tk.END, 'Max')
-        self.temperature_regime_opt.insert(tk.END, 'Optimal')
-        
         self.temperature_regime_label.place(x=x, y=y)
+        self.temperature_regime_min.insert(0, 'Min')
+        self.temperature_regime_max.insert(0, 'Max')
+        self.temperature_regime_opt.insert(0, 'Optimal')
+
 
         y += offset
         self.watering_regime_label = tk.Label(self.master, text='Режим Полива')
-        self.watering_regime_field1 = tk.Entry(self.master, width=6, state=tk.NORMAL)
-        self.watering_regime_field2 = tk.Entry(self.master, width=6, state=tk.NORMAL)
-        self.watering_regime_field1.place(x=x + x_field_offset, y=y)
-        self.watering_regime_field2.place(x=x + x_field_offset + subfield_offset, y=y)
+        self.watering_regime_vol = tk.Entry(self.master, width=6, fg='grey')
+        self.watering_regime_days = tk.Entry(self.master, width=6, fg='grey')
+        self.watering_regime_numbers = tk.Entry(self.master, width=6, fg='grey')
+        self.watering_regime_vol.place(x=x + x_field_offset, y=y)
+        self.watering_regime_days.place(x=x + x_field_offset + subfield_offset, y=y)
+        self.watering_regime_numbers.place(x=x + x_field_offset + subfield_offset*2, y=y)
+        self.watering_regime_vol.bind('<FocusIn>', on_watering_regime_click)
+        self.watering_regime_days.bind('<FocusIn>', on_watering_regime_click)
+        self.watering_regime_numbers.bind('<FocusIn>', on_watering_regime_click)
+        self.watering_regime_vol.bind('<FocusOut>', on_watering_regime_vol_focusout)
+        self.watering_regime_days.bind('<FocusOut>', on_watering_regime_days_focusout)
+        self.watering_regime_numbers.bind('<FocusOut>', on_watering_regime_number_focusout)
         self.watering_regime_label.place(x=x, y=y)
+        self.watering_regime_vol.insert(0, 'Vol(ml)')
+        self.watering_regime_days.insert(0, 'Days')
+        self.watering_regime_numbers.insert(0, 'Number')
+
 
         y += offset
         self.lightning_regime_label = tk.Label(self.master, text='Режим Освещения')
-        self.lightning_regime_field = tk.Entry(self.master, width=25, state=tk.NORMAL)
-        self.lightning_regime_field.place(x=x + x_field_offset, y=y)
+        self.lightning_regime_level = tk.Entry(self.master, width=14, state=tk.NORMAL, fg='grey')
+        self.lightning_regime_level.bind('<FocusIn>', on_lightning_regime_click)
+        self.lightning_regime_level.bind('<FocusOut>', on_lightning_regime_focusout)
+        self.lightning_regime_level.place(x=x + x_field_offset, y=y)
         self.lightning_regime_label.place(x=x, y=y)
+        self.lightning_regime_level.insert(0, 'Level(0-5)')
 
         y += offset
-        self.flowering_regime_label = tk.Label(self.master, text='Период цветения')
-        self.flowering_regime_field = tk.Entry(self.master, width=25, state=tk.NORMAL)
-        self.flowering_regime_field.place(x=x + x_field_offset, y=y)
-        self.flowering_regime_label.place(x=x, y=y)
+        self.flowering_period_label = tk.Label(self.master, text='Период цветения')
+        self.flowering_period_start_date = tk.Entry(self.master, width=6, fg='grey')
+        self.flowering_period_end_date = tk.Entry(self.master, width=6, fg='grey')
+        self.flowering_period_start_date.bind('<FocusIn>', on_flowering_period_date_click)
+        self.flowering_period_end_date.bind('<FocusIn>', on_flowering_period_date_click)
+        self.flowering_period_start_date.bind('<FocusOut>', on_flowering_period_date_focusout)
+        self.flowering_period_end_date.bind('<FocusOut>', on_flowering_period_date_focusout)
+        self.flowering_period_start_date.place(x=x + x_field_offset, y=y)
+        self.flowering_period_end_date.place(x=x + x_field_offset + subfield_offset, y=y)
+        self.flowering_period_label.place(x=x, y=y)
+        self.flowering_period_end_date.insert(0, 'DD-MM')
+        self.flowering_period_start_date.insert(0, 'DD-MM')
+
 
     def select_from_db(self):
-        plant_name = self.plant_name_field.get("1.0", tk.END)[:-1]
-        plant_type = self.plant_type_field.get("1.0", tk.END)[:-1]
+        plant_name = self.plant_name_field.get()
+        plant_type = self.plant_type_field.get()
 
-        query = (Plant.select()
-                    .join(PlantType, on=(PlantType.plant_type_id == Plant.plant_type))
-                    .where(
-                        Plant.name.startswith(plant_name) and 
-                        PlantType.plant_type.startswith(plant_type)
-                        )
-            )
+        query = Plant \
+                .select() \
+                .join(PlantType, on=(PlantType.plant_type_id == Plant.plant_type)) \
+                .where(
+                    Plant.name.startswith(plant_name) and 
+                    PlantType.plant_type.startswith(plant_type)
+                    )
+            
         
         plants = query.execute()
 
