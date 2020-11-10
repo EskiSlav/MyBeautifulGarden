@@ -104,21 +104,22 @@ class Application(tk.Frame):
         self.flowering_regime_field.place(x=x + x_field_offset, y=y)
         self.flowering_regime_label.place(x=x, y=y)
 
-
-
     def select_from_db(self):
         plant_name = self.plant_name_field.get("1.0", tk.END)[:-1]
+        plant_type = self.plant_type_field.get("1.0", tk.END)[:-1]
 
-        if len(plant_name) > 0:
-            query = (Plant.select()
-                     .join(PlantType, on=(PlantType.plant_type_id == Plant.plant_type))
-                     .where(Plant.name.startswith(plant_name))
-                )
+  
+        query = (Plant.select()
+                    .join(PlantType, on=(PlantType.plant_type_id == Plant.plant_type))
+                    .where(
+                        Plant.name.startswith(plant_name) and 
+                        PlantType.plant_type.startswith(plant_type)
+                        )
+            )
+        
+        
+        plants = query.execute()
 
-        else:
-            query = Plant.select()
-            plants = query.execute()
-            
         self.text_field.config(state=tk.NORMAL)
         self.text_field.delete('1.0', tk.END)
         self.text_field.insert(tk.END, "{:15} {:15}\n".format('Plant Type', 'Name'))
@@ -143,8 +144,30 @@ class Application(tk.Frame):
                     )
                 add = False
             except peewee.DoesNotExist as e:
+                print(e)
                 PlantType.create(plant_type=plant_type)
     
+    @staticmethod
+    def _create_all_tables():
+        TemperatureRegime.create_table()
+        WateringRegime.create_table()
+        LightRegime.create_table()
+        FloweringPeriod.create_table()
+        PlantInfo.create_table()
+        PlantType.create_table()
+        Plant.create_table()
+
+    
+    @staticmethod
+    def _drop_all_tables():
+        TemperatureRegime.drop_table()
+        WateringRegime.drop_table()
+        LightRegime.drop_table()
+        FloweringPeriod.drop_table()
+        PlantInfo.drop_table()
+        PlantType.drop_table()
+        Plant.drop_table()
+
     @staticmethod
     def _create_initial_rows():
         Application._delete_all_rows_in_database()
