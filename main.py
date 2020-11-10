@@ -27,7 +27,7 @@ import tkinter as tk
 from mytypes import *
 import peewee
 
-from formatters import get_formatted_plant
+from formatters import *
 
 logger = logging.getLogger('peewee')
 logger.addHandler(logging.StreamHandler())
@@ -60,47 +60,53 @@ class Application(tk.Frame):
         self.text_field = tk.Text(self.master, width=67, height=36, state=tk.DISABLED)
         self.text_field.place(x=self.WIDTH/2 + 10, y=10) 
 
-        offset = 25
-        y = int(self.HEIGHT/4) + offset
+        offset = 35
+        y = int(self.HEIGHT/10) + offset
         x = 50
         x_field_offset = 200
         subfield_offset = 50
         self.plant_name_label = tk.Label(self.master, text='Название растения')
-        self.plant_name_field = tk.Text(self.master, width=25, height=1, state=tk.NORMAL)
+        self.plant_name_field = tk.Entry(self.master, width=25, state=tk.NORMAL)
         self.plant_name_field.place(x=x + x_field_offset, y=y)
         self.plant_name_label.place(x=x, y=y)
 
         y += offset
         self.plant_type_label = tk.Label(self.master, text='Тип растения')
-        self.plant_type_field = tk.Text(self.master, width=25, height=1, state=tk.NORMAL)
+        self.plant_type_field = tk.Entry(self.master, width=25, state=tk.NORMAL)
         self.plant_type_field.place(x=x + x_field_offset, y=y)
         self.plant_type_label.place(x=x, y=y)
 
         y += offset
         self.temperature_regime_label = tk.Label(self.master, text='Температурный режим')
-        self.temperature_regime_field1 = tk.Text(self.master, width=6, height=1, state=tk.NORMAL)
-        self.temperature_regime_field2 = tk.Text(self.master, width=6, height=1, state=tk.NORMAL)
-        self.temperature_regime_field1.place(x=x + x_field_offset, y=y)
-        self.temperature_regime_field2.place(x=x + x_field_offset + subfield_offset, y=y)
+        self.temperature_regime_min = tk.Entry(self.master, width=6, state=tk.NORMAL)
+        self.temperature_regime_max = tk.Entry(self.master, width=6, state=tk.NORMAL)
+        self.temperature_regime_opt = tk.Entry(self.master, width=6, state=tk.NORMAL)
+        self.temperature_regime_min.place(x=x + x_field_offset, y=y)
+        self.temperature_regime_max.place(x=x + x_field_offset + subfield_offset, y=y)
+        self.temperature_regime_opt.place(x=x + x_field_offset + subfield_offset*2, y=y)
+        self.temperature_regime_min.insert(tk.END, 'Min')
+        self.temperature_regime_max.insert(tk.END, 'Max')
+        self.temperature_regime_opt.insert(tk.END, 'Optimal')
+        
         self.temperature_regime_label.place(x=x, y=y)
 
         y += offset
         self.watering_regime_label = tk.Label(self.master, text='Режим Полива')
-        self.watering_regime_field1 = tk.Text(self.master, width=6, height=1, state=tk.NORMAL)
-        self.watering_regime_field2 = tk.Text(self.master, width=6, height=1, state=tk.NORMAL)
+        self.watering_regime_field1 = tk.Entry(self.master, width=6, state=tk.NORMAL)
+        self.watering_regime_field2 = tk.Entry(self.master, width=6, state=tk.NORMAL)
         self.watering_regime_field1.place(x=x + x_field_offset, y=y)
         self.watering_regime_field2.place(x=x + x_field_offset + subfield_offset, y=y)
         self.watering_regime_label.place(x=x, y=y)
 
         y += offset
         self.lightning_regime_label = tk.Label(self.master, text='Режим Освещения')
-        self.lightning_regime_field = tk.Text(self.master, width=25, height=1, state=tk.NORMAL)
+        self.lightning_regime_field = tk.Entry(self.master, width=25, state=tk.NORMAL)
         self.lightning_regime_field.place(x=x + x_field_offset, y=y)
         self.lightning_regime_label.place(x=x, y=y)
 
         y += offset
         self.flowering_regime_label = tk.Label(self.master, text='Период цветения')
-        self.flowering_regime_field = tk.Text(self.master, width=25, height=1, state=tk.NORMAL)
+        self.flowering_regime_field = tk.Entry(self.master, width=25, state=tk.NORMAL)
         self.flowering_regime_field.place(x=x + x_field_offset, y=y)
         self.flowering_regime_label.place(x=x, y=y)
 
@@ -108,7 +114,6 @@ class Application(tk.Frame):
         plant_name = self.plant_name_field.get("1.0", tk.END)[:-1]
         plant_type = self.plant_type_field.get("1.0", tk.END)[:-1]
 
-  
         query = (Plant.select()
                     .join(PlantType, on=(PlantType.plant_type_id == Plant.plant_type))
                     .where(
@@ -116,7 +121,6 @@ class Application(tk.Frame):
                         PlantType.plant_type.startswith(plant_type)
                         )
             )
-        
         
         plants = query.execute()
 
