@@ -8,6 +8,8 @@ from peewee import *
 conn = SqliteDatabase('db.sqlite')
 
 class BaseModel(Model):
+    def __str__(self):
+        return ""
     class Meta:
         database = conn
 
@@ -22,7 +24,8 @@ class PlantType(BaseModel):
         table_name = 'PlantTypes'
 
 class Regime:
-    pass
+    def __str__(self):
+        return "Regime"
 
 class TemperatureRegime(Regime, BaseModel):
     "Temperature in Celsius"
@@ -30,6 +33,12 @@ class TemperatureRegime(Regime, BaseModel):
     optimal_temperature = DecimalField()
     min_temperature = DecimalField()
     max_temperature = DecimalField()
+
+    def __str__(self):
+        return super(Regime, self).__str__() + " Temperature Min:{} Max:{} Opt:{}".format(
+            self.min_temperature, self.max_temperature, self.optimal_temperature
+        )
+
     class Meta:
         table_name = 'TemperatureRegimes'
 
@@ -38,6 +47,12 @@ class WateringRegime(Regime, BaseModel):
     volume = DecimalField()
     days = DecimalField()
     number_of_times_per_days = DecimalField()
+
+    def __str__(self):
+        return super(Regime, self).__str__() + " Watering {}ml {}/{}".format(
+            self.volume, self.number_of_times_per_days, self.days
+        )
+        
     class Meta:
         table_name = 'WateringRegimes'
 
@@ -51,6 +66,12 @@ class LightRegime(Regime, BaseModel):
     """
     light_regime_id = AutoField(column_name='Id')
     level_of_lighting = DecimalField()
+
+    def __str__(self):
+        return super(Regime, self).__str__() + " Light level {}".format(
+            self.level_of_lighting
+        )
+
     class Meta:
         table_name = 'LightRegimes'
 
@@ -59,6 +80,9 @@ class FloweringPeriod(BaseModel):
     start_flowering = DateField()
     end_flowering = DateField()
 
+    def __str__(self):
+        return ""
+
     class Meta:
         table_name = 'FloweringPeriods'
 
@@ -66,6 +90,9 @@ class PlantInfo(BaseModel):
     plant_info_id = AutoField(column_name='Id')
     description_filepath = TextField(column_name='DescriptionPath', null=True)
     photo_filepath = TextField(column_name='PhotoPath', null=True)
+
+    def __str__(self):
+        return ""
 
     class Meta:
         table_name = 'PlantFileInfo'
@@ -82,7 +109,9 @@ class Plant(BaseModel):
 
 
     def __str__(self):
-        return "{:15} {:15}\n".format(self.name, self.plant_type.plant_type)
+        return "{:15}\n".format(self.name) + str(self.plant_type) + str(self.plant_info) \
+                + str(self.temperature_regime) + str(self.watering_regime) \
+                + str(self.watering_regime) + str(self.light_regime) + str(self.flowering_period)
 
     class Meta:
         table_name = 'Plants'

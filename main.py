@@ -34,6 +34,10 @@ logger = logging.getLogger('peewee')
 logger.addHandler(logging.StreamHandler())
 logger.setLevel(logging.DEBUG)
 
+def get_text_field(field: tk.Entry) -> str:
+            if field.cget('fg') != 'grey':
+                return field.get()
+            return ""
 
 class Application(tk.Frame):
     def __init__(self, master=None):
@@ -149,46 +153,84 @@ class Application(tk.Frame):
 
 
     def select_from_db(self):
-        plant_name = self.plant_name_field.get()
-        plant_type = self.plant_type_field.get()
 
-        query = Plant \
-                .select() \
-                .join(PlantType, on=(PlantType.plant_type_id == Plant.plant_type)) \
-                .where(
-                    Plant.name.startswith(plant_name) and 
-                    PlantType.plant_type.startswith(plant_type)
-                    )
-            
         
+
+        plant_name = get_text_field(self.plant_name_field)
+        plant_type = get_text_field(self.plant_type_field)
+        
+        temp_min = get_text_field(self.temperature_regime_min)
+        temp_max = get_text_field(self.temperature_regime_max)
+        temp_opt = get_text_field(self.temperature_regime_opt)
+        
+        try:
+            temp_min = int(temp_min) if temp_min != '' else float('-inf')
+            temp_max = int(temp_max) if temp_max != '' else float('inf')
+            temp_opt = int(temp_opt) if temp_opt != '' else 0
+        except ValueError:
+            temp_min, temp_max, temp_opt = float('-inf'), float('inf'), 0
+
+        watering_vol = get_text_field(self.watering_regime_vol)
+        watering_days = get_text_field(self.watering_regime_days)
+        watering_numbers = get_text_field(self.watering_regime_numbers)
+
+        query = Plant.select() \
+            .join(PlantType, on=(PlantType.plant_type_id == Plant.plant_type)) \
+            .join(TemperatureRegime, join_type=JOIN.LEFT_OUTER,
+                  on=(TemperatureRegime.temperature_regime_id == Plant.temperature_regime)) \
+            .join(WateringRegime, join_type=JOIN.LEFT_OUTER,
+                  on=(WateringRegime.watering_regime_id == Plant.watering_regime)) \
+            .join(LightRegime, join_type=JOIN.LEFT_OUTER,
+                  on=(LightRegime.light_regime_id == Plant.light_regime)) \
+            .join(FloweringPeriod, join_type=JOIN.LEFT_OUTER,
+                  on=(FloweringPeriod.flowering_period_id == Plant.flowering_period)) \
+            .where(
+                Plant.name.startswith(plant_name) &
+                PlantType.plant_type.startswith(plant_type) &
+                TemperatureRegime.min_temperature >= temp_min &
+                TemperatureRegime.max_temperature <= temp_max
+            )
+            
         plants = query.execute()
 
         self.text_field.config(state=tk.NORMAL)
         self.text_field.delete('1.0', tk.END)
-        self.text_field.insert(tk.END, "{:15} {:15}\n".format('Plant Type', 'Name'))
+        # self.text_field.insert(tk.END, "{:15} {:15}\n".format('Plant Type', 'Name'))
         for plant in plants:
             text = get_formatted_plant(plant)
             self.text_field.insert(tk.END, text)
         self.text_field.config(state=tk.DISABLED)
     
     def add_plant(self):
-        plant_name = self.plant_name_field.get("1.0", tk.END)[:-1]
-        plant_type = self.plant_type_field.get("1.0", tk.END)[:-1]
-        self.__add_plant(plant_name, plant_type)
+        plant_name = get_text_field(self.plant_name_field)
+        plant_type = get_text_field(self.plant_type_field)
+        temp_min = get_text_field(self.temperature_regime_min)
+        temp_max = get_text_field(self.temperature_regime_max)
+        temp_opt = get_text_field(self.temperature_regime_opt)
+        self.__add_plant(plant_name, plant_type, temp_min, temp_max, temp_opt)
 
     @staticmethod
-    def __add_plant(plant_name: str, plant_type: str):
+    def __add_plant(plant_name: str, plant_type: str, temp_min: int=None, temp_max: int=None,
+                    temp_opt: int=None, volume: int=None, watering_days: int=None, watering_number: int=None,
+                    light_level: int=None, flowering_start: str=None, flowering_end: str=None):
         add = True
         while add:
             try:
                 Plant.create(
                     name=plant_name, 
-                    plant_type=PlantType.get(PlantType.plant_type == plant_type)
+                    plant_type=PlantType.get(PlantType.plant_type == plant_type),
+                    temperature_regime=TemperatureRegime.get(
+                            (TemperatureRegime.optimal_temperature == temp_opt) & 
+                            (TemperatureRegime.min_temperature == temp_min) &
+                            (TemperatureRegime.max_temperature == temp_max)
+                        )
                     )
                 add = False
             except peewee.DoesNotExist as e:
-                print(e)
                 PlantType.create(plant_type=plant_type)
+                TemperatureRegime.create(optimal_temperature=temp_opt, 
+                                         min_temperature=temp_min,
+                                         max_temperature=temp_max)
     
     @staticmethod
     def _create_all_tables():
