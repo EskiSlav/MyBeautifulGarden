@@ -23,6 +23,8 @@
 
 import logging
 import tkinter as tk
+import tkinter.filedialog, tkinter.messagebox
+from datetime import datetime
 
 from mytypes import *
 import peewee
@@ -151,10 +153,17 @@ class Application(tk.Frame):
         self.flowering_period_end_date.insert(0, 'DD-MM')
         self.flowering_period_start_date.insert(0, 'DD-MM')
 
+        y += offset
+        self.create_description_btn = tk.Button(self.master, text='Create Descripiton')
+        self.create_description_btn['command'] = self.create_window
+        self.create_description_btn.place(x=x, y=y)
+        
+        y += offset
+        self.description_path_label = tk.Label(self.master, text='Heh')
+        self.description_path_label.place(x=x, y=y)
+
 
     def select_from_db(self):
-
-        
 
         plant_name = get_text_field(self.plant_name_field)
         plant_type = get_text_field(self.plant_type_field)
@@ -174,7 +183,15 @@ class Application(tk.Frame):
         watering_days = get_text_field(self.watering_regime_days)
         watering_numbers = get_text_field(self.watering_regime_numbers)
 
-        query = Plant.select() \
+        light_level = get_text_field(self.lightning_regime_level)
+
+        flowering_start = get_text_field(self.flowering_period_start_date)
+        flowering_end = get_text_field(self.flowering_period_end_date)
+        # flowering_date_end = datetime(
+        #     2000, flowering_date_end[1], flowering_date_end[0], 0, 0, 0
+        #     )
+
+        query_string = """Plant.select() \
             .join(PlantType, on=(PlantType.plant_type_id == Plant.plant_type)) \
             .join(TemperatureRegime, join_type=JOIN.LEFT_OUTER,
                   on=(TemperatureRegime.temperature_regime_id == Plant.temperature_regime)) \
@@ -183,13 +200,42 @@ class Application(tk.Frame):
             .join(LightRegime, join_type=JOIN.LEFT_OUTER,
                   on=(LightRegime.light_regime_id == Plant.light_regime)) \
             .join(FloweringPeriod, join_type=JOIN.LEFT_OUTER,
-                  on=(FloweringPeriod.flowering_period_id == Plant.flowering_period)) \
-            .where(
-                Plant.name.startswith(plant_name) &
-                PlantType.plant_type.startswith(plant_type) &
-                TemperatureRegime.min_temperature >= temp_min &
-                TemperatureRegime.max_temperature <= temp_max
-            )
+                  on=(FloweringPeriod.flowering_period_id == Plant.flowering_period))"""
+
+        where_clause = []
+        if plant_name != "":
+            where_clause.append("(Plant.name.startswith(plant_name))")
+        if plant_type != "":
+            where_clause.append("(PlantType.plant_type.startswith(plant_type))")
+        if temp_min != float('-inf'):
+            where_clause.append("(TemperatureRegime.min_temperature >= temp_min)")
+        if temp_max != float('inf'):
+            where_clause.append("(TemperatureRegime.max_temperature <= temp_max)")
+        if watering_days != '':
+            where_clause.append("(WateringRegime.days == watering_days)")
+        if watering_numbers != '':
+            where_clause.append("(WateringRegime.number_of_times_per_days == watering_numbers)")
+        if watering_vol != "":
+            where_clause.append("(WateringRegime.volume == watering_vol)")
+        if light_level != "":
+            where_clause.append("(LightRegime.level_of_lighting == light_level)")
+
+        
+
+        if flowering_start != "":
+            where_clause.append("""FloweringPeriod.start_flowering >= datetime(
+                2000, int(flowering_start.split('-')[1]), int(flowering_start.split('-')[0]), 0, 0, 0, 0
+                )""")
+        if flowering_end != "":
+            where_clause.append("""FloweringPeriod.end_flowering <= datetime(
+            2000, int(flowering_end.split('-')[1]), int(flowering_end.split('-')[0]), 0, 0, 0, 0
+            )""")
+
+
+        if len(where_clause) > 0:
+            query_string += ".where(" + " & ".join(where_clause) + ')'
+
+        query = eval(query_string)
             
         plants = query.execute()
 
@@ -204,34 +250,170 @@ class Application(tk.Frame):
     def add_plant(self):
         plant_name = get_text_field(self.plant_name_field)
         plant_type = get_text_field(self.plant_type_field)
+        # try:
         temp_min = get_text_field(self.temperature_regime_min)
         temp_max = get_text_field(self.temperature_regime_max)
         temp_opt = get_text_field(self.temperature_regime_opt)
-        self.__add_plant(plant_name, plant_type, temp_min, temp_max, temp_opt)
+        # except ValueError:
+        #     tkinter.messagebox.showinfo('FYI', '!!!Wrong Data!!!')
+        #     return
+        volume = get_text_field(self.watering_regime_vol)
+        watering_days = get_text_field(self.watering_regime_days)
+        watering_number = get_text_field(self.watering_regime_numbers)
+        light_level = get_text_field(self.lightning_regime_level)
+        flowering_start = get_text_field(self.flowering_period_start_date)
+        flowering_end = get_text_field(self.flowering_period_end_date)
+        description_path = self.description_path_label['text']
+        self.__add_plant(plant_name, plant_type, temp_min, temp_max, temp_opt, volume,
+                         watering_days, watering_number, light_level, flowering_start,
+                         flowering_end, description_path)
+        tkinter.messagebox.showinfo('FYI', 'Plant Created')
+
 
     @staticmethod
     def __add_plant(plant_name: str, plant_type: str, temp_min: int=None, temp_max: int=None,
                     temp_opt: int=None, volume: int=None, watering_days: int=None, watering_number: int=None,
-                    light_level: int=None, flowering_start: str=None, flowering_end: str=None):
+                    light_level: int=None, flowering_start: str=None, flowering_end: str=None,
+                    description_path: str=None):
         add = True
-        while add:
-            try:
-                Plant.create(
-                    name=plant_name, 
-                    plant_type=PlantType.get(PlantType.plant_type == plant_type),
-                    temperature_regime=TemperatureRegime.get(
-                            (TemperatureRegime.optimal_temperature == temp_opt) & 
-                            (TemperatureRegime.min_temperature == temp_min) &
-                            (TemperatureRegime.max_temperature == temp_max)
+
+        plant = Plant()
+        
+        res = list(PlantType.select().where(PlantType.plant_type == plant_type))
+
+        if len(res) > 0:
+            plant_type_model = res[0]
+        else: 
+            if plant_type == '':
+                plant_type_model = None
+            else:
+                plant_type_model = PlantType()
+                plant_type_model.plant_type = plant_type
+                plant_type_model.save()
+
+
+        res = list(TemperatureRegime.select().where(
+            TemperatureRegime.optimal_temperature == temp_opt &
+            TemperatureRegime.min_temperature == temp_min &
+            TemperatureRegime.max_temperature == temp_max
+        ))
+
+        if len(res) > 0:
+            temperature_regime = res[0]
+        else:
+            if temp_min == '':
+                temp_min = None
+            if temp_max == '':
+                temp_max = None
+            if temp_opt == '':
+                temp_opt = None
+            
+            if temp_min is None and temp_max is None and temp_opt is None:
+                temperature_regime = None
+            else:
+                temperature_regime = TemperatureRegime()
+                temperature_regime.min_temperature = temp_min
+                temperature_regime.max_temperature = temp_max
+                temperature_regime.optimal_temperature = temp_opt
+                temperature_regime.save()
+        
+
+        res = list(WateringRegime.select().where(
+            WateringRegime.volume == volume &
+            WateringRegime.number_of_times_per_days == watering_number &
+            WateringRegime.days == watering_days
+        ))
+
+        if len(res) > 0:
+            watering_regime = res[0]
+        else:
+            if volume == '':
+                volume = None
+            if watering_number == '':
+                watering_number = None
+            if watering_days == '':
+                watering_days = None
+            
+            if volume is None and watering_number is None and watering_days is None:
+                watering_regime = None
+            else:
+                watering_regime = WateringRegime()
+                watering_regime.volume = volume
+                watering_regime.number_of_times_per_days = watering_number
+                watering_regime.days = watering_days
+                watering_regime.save()
+        
+        if len(res) > 0:
+            light_regime = res[0]
+        else:
+            if light_level == '':
+                light_level = None
+            if light_level is None:
+                light_regime = None
+            else:
+                light_regime = LightRegime()
+                light_regime.level_of_lighting = light_level
+                light_regime.save()
+
+        if len(res) > 0:
+            flowering_period = res[0]
+        else:
+            
+            flowering_period = FloweringPeriod()
+            if flowering_end != '' and flowering_end != '':
+                try:
+                    flowering_period.start_flowering = datetime(
+                        2000, int(flowering_start.split('-')[1]), int(flowering_start.split('-')[0]), 0, 0, 0, 0
                         )
-                    )
-                add = False
-            except peewee.DoesNotExist as e:
-                PlantType.create(plant_type=plant_type)
-                TemperatureRegime.create(optimal_temperature=temp_opt, 
-                                         min_temperature=temp_min,
-                                         max_temperature=temp_max)
-    
+                    flowering_period.end_flowering = datetime(
+                        2000, int(flowering_end.split('-')[1]), int(flowering_end.split('-')[0]), 0, 0, 0, 0
+                        )
+                except IndexError:
+                    tkinter.messagebox.showinfo('FYI', 'Wrong Flowering Date entered')
+                    return
+                flowering_period.save()
+            else:
+                flowering_period = None
+            
+        if description_path != '':
+            plant_info = PlantInfo()
+            plant_info.description_filepath = description_path
+            plant_info.save()
+        else:
+            plant_info = None
+
+        plant.name = plant_name
+        plant.plant_type = plant_type_model
+        plant.temperature_regime = temperature_regime
+        plant.watering_regime = watering_regime
+        plant.light_regime = light_regime
+        plant.flowering_period = flowering_period
+        plant.plant_info = plant_info
+
+        plant.save()
+        print('Created!\n')
+     
+    def create_window(self):
+        self.top = tk.Toplevel(self, width=600, height=300)
+        self.top.wm_title("Create Description")
+
+        self.text_subfield = tk.Text(self.top, width=40, height=20)
+        self.text_subfield.place(x=300, y=15)
+
+        self.save_file_btn = tk.Button(self.top, text='Save to file', command=self.save_as)
+        self.save_file_btn.place(x = 15, y=145)
+        l = tk.Label(self.top, text="This is window")
+
+    def save_as(self):
+        filename = tkinter.filedialog.asksaveasfilename(defaultextension='.txt')
+        f = open(filename, 'w')
+        f.write(self.text_subfield.get('1.0', 'end'))
+        f.close()
+        tkinter.messagebox.showinfo('FYI', 'File Saved')
+        self.description_path_label['text'] = filename
+        self.top.destroy()
+        self.top.update()
+
     @staticmethod
     def _create_all_tables():
         TemperatureRegime.create_table()
@@ -256,12 +438,12 @@ class Application(tk.Frame):
     @staticmethod
     def _create_initial_rows():
         Application._delete_all_rows_in_database()
-        Application.__add_plant('Клён', 'Дерево')
-        Application.__add_plant('Дуб', 'Дерево')
-        Application.__add_plant('Граб', 'Дерево')
-        Application.__add_plant('Черешня', 'Дерево')
-        Application.__add_plant('Малина', 'Куст')
-        Application.__add_plant('Клубника', 'Куст')
+        Application.__add_plant('Клён', 'Дерево', 1, 40, 25)
+        Application.__add_plant('Дуб', 'Дерево', 5, 20, 15)
+        Application.__add_plant('Граб', 'Дерево', 6, 23, 345)
+        Application.__add_plant('Черешня', 'Дерево', 12, 15, 13)
+        Application.__add_plant('Малина', 'Куст', 15, 23, 17)
+        Application.__add_plant('Клубника', 'Куст',12, 60, 30)
 
     @staticmethod
     def _delete_all_rows_in_database():

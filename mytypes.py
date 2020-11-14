@@ -18,7 +18,7 @@ class PlantType(BaseModel):
     plant_type = TextField(column_name='Type', null=True)
 
     def __str__(self):
-        return " {:15} ".format(self.plant_type)
+        return "{:15}\n".format(self.plant_type)
 
     class Meta:
         table_name = 'PlantTypes'
@@ -30,12 +30,12 @@ class Regime:
 class TemperatureRegime(Regime, BaseModel):
     "Temperature in Celsius"
     temperature_regime_id = AutoField(column_name='Id')
-    optimal_temperature = DecimalField()
-    min_temperature = DecimalField()
-    max_temperature = DecimalField()
+    optimal_temperature = DecimalField(column_name='optimal_temperature')
+    min_temperature = DecimalField(column_name='min_temperature')
+    max_temperature = DecimalField(column_name='max_temperature')
 
     def __str__(self):
-        return super(Regime, self).__str__() + " Temperature Min:{} Max:{} Opt:{}".format(
+        return super(Regime, self).__str__() + "Temperature Min:{} Max:{} Opt:{}\n".format(
             self.min_temperature, self.max_temperature, self.optimal_temperature
         )
 
@@ -44,12 +44,12 @@ class TemperatureRegime(Regime, BaseModel):
 
 class WateringRegime(Regime, BaseModel):
     watering_regime_id = AutoField(column_name='Id')
-    volume = DecimalField()
-    days = DecimalField()
-    number_of_times_per_days = DecimalField()
+    volume = DecimalField(column_name='volume')
+    days = DecimalField(column_name='days')
+    number_of_times_per_days = DecimalField(column_name='numbers')
 
     def __str__(self):
-        return super(Regime, self).__str__() + " Watering {}ml {}/{}".format(
+        return super(Regime, self).__str__() + "Watering {}ml {}/{}\n".format(
             self.volume, self.number_of_times_per_days, self.days
         )
         
@@ -65,10 +65,10 @@ class LightRegime(Regime, BaseModel):
     - 3: high
     """
     light_regime_id = AutoField(column_name='Id')
-    level_of_lighting = DecimalField()
+    level_of_lighting = DecimalField(column_name='level')
 
     def __str__(self):
-        return super(Regime, self).__str__() + " Light level {}".format(
+        return super(Regime, self).__str__() + "Light level {}\n".format(
             self.level_of_lighting
         )
 
@@ -77,11 +77,17 @@ class LightRegime(Regime, BaseModel):
 
 class FloweringPeriod(BaseModel):
     flowering_period_id = AutoField(column_name='Id')
-    start_flowering = DateField()
-    end_flowering = DateField()
+    start_flowering = DateField(column_name='start_date')
+    end_flowering = DateField(column_name='end_date')
 
     def __str__(self):
-        return ""
+        s = ""
+        if self.start_flowering != '' and not self.start_flowering is None:
+            s += "  Start Flowering: {} \n".format(str(self.start_flowering)[5:])
+        if self.end_flowering != '' and not self.end_flowering is None:
+            s += "  End Flowering: {}\n".format(str(self.end_flowering)[5:])
+        return s
+
 
     class Meta:
         table_name = 'FloweringPeriods'
@@ -92,7 +98,16 @@ class PlantInfo(BaseModel):
     photo_filepath = TextField(column_name='PhotoPath', null=True)
 
     def __str__(self):
-        return ""
+        s = ""
+        if not self.description_filepath is None:
+            s += "FilePath: {}\n".format(self.description_filepath)
+        if not self.photo_filepath is None:
+            s += "PhotoPath: {}\n".format(self.photo_filepath)
+        return s
+        
+            
+
+
 
     class Meta:
         table_name = 'PlantFileInfo'
@@ -109,9 +124,21 @@ class Plant(BaseModel):
 
 
     def __str__(self):
-        return "{:15}\n".format(self.name) + str(self.plant_type) + str(self.plant_info) \
-                + str(self.temperature_regime) + str(self.watering_regime) \
-                + str(self.watering_regime) + str(self.light_regime) + str(self.flowering_period)
+        s = ""
+        
+        def if_not_none_add_str(arg):
+            if not arg is None:
+                return str(arg)
+            return "" 
+
+        s += if_not_none_add_str(self.plant_type)
+        s += if_not_none_add_str(self.plant_info) 
+        s += if_not_none_add_str(self.temperature_regime)
+        s += if_not_none_add_str(self.watering_regime) 
+        s += if_not_none_add_str(self.watering_regime)
+        s += if_not_none_add_str(self.light_regime)
+        s += if_not_none_add_str(self.flowering_period)
+        return "- - -\n{:15}\n".format(self.name) + s
 
     class Meta:
         table_name = 'Plants'
