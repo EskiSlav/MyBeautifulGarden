@@ -158,7 +158,7 @@ class Application(tk.Frame):
         self.create_description_btn.place(x=x, y=y)
         
         y += offset
-        self.description_path_label = tk.Label(self.master, text='Heh')
+        self.description_path_label = tk.Label(self.master, text='<Path to Description File>')
         self.description_path_label.place(x=x, y=y)
 
 
