@@ -1,6 +1,5 @@
  # -*- coding: utf-8 -*-
-
-
+# ---Задача---
 # Работа должна быть выполнена на python обязательно(и только) по принципам ооп - 
 # полиморфизм, инкапсуляция, наследование, вывести все это через gui, например 
 # tkinter, программа также должна работать с небольшой базой данный типа sql или postgres. 
@@ -73,7 +72,7 @@ class Application(tk.Frame):
         x_field_offset = 200
         subfield_offset = 70
 
-        self.plant_name_label = tk.Label(self.master, text='Название растения')
+        self.plant_name_label = tk.Label(self.master, text='Plant Name')
         self.plant_name_field = tk.Entry(self.master, width=25, fg='grey')
         self.plant_name_field.bind('<FocusIn>', on_click)
         self.plant_name_field.bind('<FocusOut>', on_focusout)
@@ -82,7 +81,7 @@ class Application(tk.Frame):
         self.plant_name_field.insert(0, 'Plant Name')
 
         y += offset
-        self.plant_type_label = tk.Label(self.master, text='Тип растения')
+        self.plant_type_label = tk.Label(self.master, text='Plant type')
         self.plant_type_field = tk.Entry(self.master, width=25, fg='grey')
         self.plant_type_field.bind('<FocusIn>', on_click)
         self.plant_type_field.bind('<FocusOut>', on_focusout)
@@ -91,7 +90,7 @@ class Application(tk.Frame):
         self.plant_type_field.insert(0, 'Plant Type')
 
         y += offset
-        self.temperature_regime_label = tk.Label(self.master, text='Температурный режим')
+        self.temperature_regime_label = tk.Label(self.master, text='Temperature regime')
         self.temperature_regime_min = tk.Entry(self.master, width=6, state=tk.NORMAL, fg='grey')
         self.temperature_regime_max = tk.Entry(self.master, width=6, state=tk.NORMAL, fg='grey')
         self.temperature_regime_opt = tk.Entry(self.master, width=6, state=tk.NORMAL, fg='grey')
@@ -111,7 +110,7 @@ class Application(tk.Frame):
 
 
         y += offset
-        self.watering_regime_label = tk.Label(self.master, text='Режим Полива')
+        self.watering_regime_label = tk.Label(self.master, text='Watering regime')
         self.watering_regime_vol = tk.Entry(self.master, width=6, fg='grey')
         self.watering_regime_days = tk.Entry(self.master, width=6, fg='grey')
         self.watering_regime_numbers = tk.Entry(self.master, width=6, fg='grey')
@@ -131,7 +130,7 @@ class Application(tk.Frame):
 
 
         y += offset
-        self.lightning_regime_label = tk.Label(self.master, text='Режим Освещения')
+        self.lightning_regime_label = tk.Label(self.master, text='Amount of light')
         self.lightning_regime_level = tk.Entry(self.master, width=14, state=tk.NORMAL, fg='grey')
         self.lightning_regime_level.bind('<FocusIn>', on_lightning_regime_click)
         self.lightning_regime_level.bind('<FocusOut>', on_lightning_regime_focusout)
@@ -140,7 +139,7 @@ class Application(tk.Frame):
         self.lightning_regime_level.insert(0, 'Level(0-5)')
 
         y += offset
-        self.flowering_period_label = tk.Label(self.master, text='Период цветения')
+        self.flowering_period_label = tk.Label(self.master, text='Flowering period')
         self.flowering_period_start_date = tk.Entry(self.master, width=6, fg='grey')
         self.flowering_period_end_date = tk.Entry(self.master, width=6, fg='grey')
         self.flowering_period_start_date.bind('<FocusIn>', on_flowering_period_date_click)
@@ -438,12 +437,12 @@ class Application(tk.Frame):
     @staticmethod
     def _create_initial_rows():
         Application._delete_all_rows_in_database()
-        Application.__add_plant('Клён', 'Дерево', 1, 40, 25)
+        Application.__add_plant('Клtн', 'Дерево', 1, 40, 25)
         Application.__add_plant('Дуб', 'Дерево', 5, 20, 15)
         Application.__add_plant('Граб', 'Дерево', 6, 23, 345)
         Application.__add_plant('Черешня', 'Дерево', 12, 15, 13)
         Application.__add_plant('Малина', 'Куст', 15, 23, 17)
-        Application.__add_plant('Клубника', 'Куст',12, 60, 30)
+        Application.__add_plant('Полуниця', 'Куст',12, 60, 30)
 
     @staticmethod
     def _delete_all_rows_in_database():
